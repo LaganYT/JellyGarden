@@ -5,7 +5,7 @@ This setup provides a complete Linux service that runs the TV Garden channel ext
 ## Features
 
 - **Daily Automation**: Runs the enhanced extractor every day automatically
-- **Web Hosting**: Serves the generated files via HTTP on port 8080
+- **Web Hosting**: Serves the generated files via HTTP on port 3126
 - **Systemd Integration**: Full systemd service with timer for daily execution
 - **Logging**: Comprehensive logging with rotation
 - **Error Handling**: Automatic retry on failures
@@ -118,8 +118,8 @@ sudo journalctl -u tv-garden.service -f
 
 Once running, the files are available at:
 
-- **XMLTV Guide Data**: `http://localhost:8080/tv_garden_channels_enhanced.xmltv`
-- **M3U Playlist**: `http://localhost:8080/tv_garden_channels.m3u`
+- **XMLTV Guide Data**: `http://localhost:3126/tv_garden_channels_enhanced.xmltv`
+- **M3U Playlist**: `http://localhost:3126/tv_garden_channels.m3u`
 
 ## Configuration
 
@@ -128,7 +128,7 @@ Once running, the files are available at:
 To change the web port, edit `/opt/tv-garden/daily_tv_garden.sh` and modify the `WEB_PORT` variable:
 
 ```bash
-WEB_PORT=8080  # Change to your preferred port
+WEB_PORT=3126  # Change to your preferred port
 ```
 
 ### Timer Schedule
@@ -152,14 +152,14 @@ OnCalendar=*-*-* 06:00:00  # Run at 6 AM daily
 
 1. In Jellyfin, go to **Dashboard** → **Live TV** → **Tuners**
 2. Click **Add Tuner** → **M3U Tuner**
-3. Enter the M3U URL: `http://your-server:8080/tv_garden_channels.m3u`
+3. Enter the M3U URL: `http://your-server:3126/tv_garden_channels.m3u`
 4. Save the tuner
 
 ### Adding Guide Data
 
 1. In Jellyfin, go to **Dashboard** → **Live TV** → **Guide Data Providers**
 2. Click **Add Guide Data Provider** → **XMLTV**
-3. Enter the XMLTV URL: `http://your-server:8080/tv_garden_channels_enhanced.xmltv`
+3. Enter the XMLTV URL: `http://your-server:3126/tv_garden_channels_enhanced.xmltv`
 4. Save the provider
 
 ### Mapping Channels
@@ -180,7 +180,7 @@ OnCalendar=*-*-* 06:00:00  # Run at 6 AM daily
 
 ```bash
 # Check if web server is responding
-curl -I http://localhost:8080/tv_garden_channels.m3u
+curl -I http://localhost:3126/tv_garden_channels.m3u
 
 # Check file sizes
 ls -lh /var/www/tv-garden/
@@ -205,7 +205,7 @@ ls -lh /var/www/tv-garden/
 
 ### Web Server Issues
 
-1. Check if port is in use: `sudo netstat -tlnp | grep :8080`
+1. Check if port is in use: `sudo netstat -tlnp | grep :3126`
 2. Restart web server: `/opt/tv-garden/daily_tv_garden.sh restart`
 3. Check web server logs: `tail -f /var/log/tv-garden/web_server.log`
 

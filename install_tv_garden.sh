@@ -15,7 +15,7 @@ NC='\033[0m' # No Color
 # Configuration
 INSTALL_DIR="/opt/tv-garden"
 SERVICE_USER="tv-garden"
-WEB_PORT=8080
+WEB_PORT=3126
 
 # Function to print colored output
 print_status() {

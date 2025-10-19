@@ -12,7 +12,7 @@ WEB_DIR="/var/www/tv-garden"
 PYTHON_SCRIPT="$SCRIPT_DIR/enhanced_extractor.py"
 LOG_FILE="$LOG_DIR/daily_extraction.log"
 PID_FILE="/var/run/tv-garden-web.pid"
-WEB_PORT=8080
+WEB_PORT=3126
 
 # Create directories if they don't exist
 sudo mkdir -p "$LOG_DIR" "$WEB_DIR"

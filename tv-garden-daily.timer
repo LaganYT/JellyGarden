@@ -1,6 +1,6 @@
 [Unit]
 Description=Run TV Garden extraction daily
-Requires=tv-garden.service
+Requires=tv-garden-daily.service
 
 [Timer]
 OnCalendar=daily

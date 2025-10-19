@@ -115,6 +115,7 @@ install_service() {
     
     # Copy service files
     cp "$SCRIPT_DIR/tv-garden.service" "/etc/systemd/system/"
+    cp "$SCRIPT_DIR/tv-garden-daily.service" "/etc/systemd/system/"
     cp "$SCRIPT_DIR/tv-garden-daily.timer" "/etc/systemd/system/"
     
     # Reload systemd
@@ -122,6 +123,7 @@ install_service() {
     
     # Enable and start the service
     systemctl enable tv-garden.service
+    systemctl enable tv-garden-daily.service
     systemctl enable tv-garden-daily.timer
     
     print_success "Systemd service installed and enabled"

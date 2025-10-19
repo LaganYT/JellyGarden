@@ -1,0 +1,28 @@
+[Unit]
+Description=TV Garden Channel Extractor and Web Server
+After=network.target
+Wants=network.target
+
+[Service]
+Type=forking
+User=root
+Group=root
+WorkingDirectory=/opt/tv-garden
+ExecStart=/opt/tv-garden/daily_tv_garden.sh start
+ExecStop=/opt/tv-garden/daily_tv_garden.sh stop
+ExecReload=/opt/tv-garden/daily_tv_garden.sh restart
+PIDFile=/var/run/tv-garden-web.pid
+Restart=on-failure
+RestartSec=30
+StandardOutput=journal
+StandardError=journal
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/log/tv-garden /var/www/tv-garden /var/run
+
+[Install]
+WantedBy=multi-user.target

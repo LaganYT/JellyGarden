@@ -1,0 +1,11 @@
+[Unit]
+Description=Run TV Garden extraction daily
+Requires=tv-garden.service
+
+[Timer]
+OnCalendar=daily
+Persistent=true
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target

@@ -11,7 +11,7 @@ WorkingDirectory=/opt/tv-garden
 ExecStart=/opt/tv-garden/daily_tv_garden.sh start
 ExecStop=/opt/tv-garden/daily_tv_garden.sh stop
 ExecReload=/opt/tv-garden/daily_tv_garden.sh restart
-PIDFile=/var/run/tv-garden-web.pid
+PIDFile=/run/tv-garden-web.pid
 Restart=on-failure
 RestartSec=30
 StandardOutput=journal
@@ -22,7 +22,7 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/var/log/tv-garden /var/www/tv-garden /var/run
+ReadWritePaths=/var/log/tv-garden /var/www/tv-garden /run /tmp
 
 [Install]
 WantedBy=multi-user.target

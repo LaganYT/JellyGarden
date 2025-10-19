@@ -11,7 +11,7 @@ LOG_DIR="/var/log/tv-garden"
 WEB_DIR="/var/www/tv-garden"
 PYTHON_SCRIPT="$SCRIPT_DIR/enhanced_extractor.py"
 LOG_FILE="$LOG_DIR/daily_extraction.log"
-PID_FILE="/var/run/tv-garden-web.pid"
+PID_FILE="/run/tv-garden-web.pid"
 WEB_PORT=3126
 
 # Create directories if they don't exist
@@ -81,12 +81,17 @@ stop_web_server() {
 run_extraction() {
     log_message "Starting TV Garden channel extraction..."
     
-    # Change to script directory
-    cd "$SCRIPT_DIR"
+    # Create a temporary writable directory
+    TEMP_DIR="/tmp/tv-garden-$$"
+    mkdir -p "$TEMP_DIR"
+    
+    # Change to temporary directory
+    cd "$TEMP_DIR"
     
     # Check if Python script exists
     if [ ! -f "$PYTHON_SCRIPT" ]; then
         log_message "ERROR: Python script not found at $PYTHON_SCRIPT"
+        rm -rf "$TEMP_DIR"
         return 1
     fi
     
@@ -95,26 +100,35 @@ run_extraction() {
         log_message "Installing Python requirements..."
         pip3 install -r "$SCRIPT_DIR/requirements.txt" || {
             log_message "ERROR: Failed to install requirements"
+            rm -rf "$TEMP_DIR"
             return 1
         }
     fi
     
-    # Run the extraction
-    if python3 "$PYTHON_SCRIPT"; then
+    # Copy the Python script to temp directory
+    cp "$PYTHON_SCRIPT" "$TEMP_DIR/"
+    cp "$SCRIPT_DIR/requirements.txt" "$TEMP_DIR/" 2>/dev/null || true
+    
+    # Run the extraction in temp directory
+    if python3 "$TEMP_DIR/enhanced_extractor.py"; then
         log_message "Extraction completed successfully"
         
         # Copy files to web directory
-        cp -f "$SCRIPT_DIR/tv_garden_channels_enhanced.xmltv" "$WEB_DIR/"
-        cp -f "$SCRIPT_DIR/tv_garden_channels.m3u" "$WEB_DIR/"
+        cp -f "$TEMP_DIR/tv_garden_channels_enhanced.xmltv" "$WEB_DIR/"
+        cp -f "$TEMP_DIR/tv_garden_channels.m3u" "$WEB_DIR/"
         
         # Set proper permissions
         chmod 644 "$WEB_DIR/tv_garden_channels_enhanced.xmltv"
         chmod 644 "$WEB_DIR/tv_garden_channels.m3u"
         
         log_message "Files copied to web directory: $WEB_DIR"
+        
+        # Clean up temp directory
+        rm -rf "$TEMP_DIR"
         return 0
     else
         log_message "ERROR: Extraction failed"
+        rm -rf "$TEMP_DIR"
         return 1
     fi
 }

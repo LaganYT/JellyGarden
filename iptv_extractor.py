@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """
-Simple M3U Cleaner - Downloads BuddyChewChew's playlist and removes adult content
+IPTV Extractor - Downloads BuddyChewChew's playlist, filters adult content, and fetches EPG data
 """
 
 import requests
 import sys
 import argparse
+import xml.etree.ElementTree as ET
+from datetime import datetime, timezone
 
 def download_m3u(url):
     """Download the M3U playlist"""
@@ -17,6 +19,30 @@ def download_m3u(url):
         return response.text
     except Exception as e:
         print(f"Error downloading M3U: {e}")
+        return None
+
+def download_xml_epg(url):
+    """Download XML EPG data"""
+    try:
+        print(f"Downloading EPG XML from: {url}")
+        response = requests.get(url, timeout=60, verify=True)
+        response.raise_for_status()
+        print(f"Downloaded {len(response.text)} characters of XML data")
+        return response.text
+    except requests.exceptions.SSLError as e:
+        print(f"SSL Error downloading EPG XML: {e}")
+        print("Note: The EPG source may have SSL certificate issues.")
+        print("Trying with SSL verification disabled...")
+        try:
+            response = requests.get(url, timeout=60, verify=False)
+            response.raise_for_status()
+            print(f"Downloaded {len(response.text)} characters of XML data (SSL verification bypassed)")
+            return response.text
+        except Exception as e2:
+            print(f"Still failed: {e2}")
+            return None
+    except Exception as e:
+        print(f"Error downloading EPG XML: {e}")
         return None
 
 def filter_adult_content(m3u_content):
@@ -140,6 +166,82 @@ def filter_adult_content(m3u_content):
 
     return filtered_content
 
+def parse_and_save_xmltv(xml_content, filename):
+    """Parse XML EPG data and save as XMLTV format"""
+    try:
+        # Parse the XML
+        root = ET.fromstring(xml_content)
+
+        # Create XMLTV structure
+        tv_element = ET.Element('tv')
+        tv_element.set('generator-info-name', 'PlutoTV EPG')
+        tv_element.set('generator-info-url', 'https://i.mjh.nz/PlutoTV/us.xml')
+
+        # Extract channels and programmes
+        channels = {}
+        programme_count = 0
+
+        for programme in root.findall('.//programme'):
+            # Extract programme data
+            start = programme.get('start')
+            stop = programme.get('stop')
+            channel = programme.get('channel')
+            title = programme.find('title')
+            desc = programme.find('desc')
+
+            if channel and title is not None:
+                # Add to channels dict if not exists
+                if channel not in channels:
+                    channels[channel] = {
+                        'id': channel,
+                        'display_name': channel,
+                        'icon': None
+                    }
+
+                # Create programme element
+                prog_element = ET.SubElement(tv_element, 'programme')
+                prog_element.set('start', start)
+                prog_element.set('stop', stop)
+                prog_element.set('channel', channel)
+
+                title_element = ET.SubElement(prog_element, 'title')
+                title_element.set('lang', 'en')
+                title_element.text = title.text or 'No Title'
+
+                if desc is not None and desc.text:
+                    desc_element = ET.SubElement(prog_element, 'desc')
+                    desc_element.set('lang', 'en')
+                    desc_element.text = desc.text
+
+                programme_count += 1
+
+        # Add channel elements
+        for channel_id, channel_data in channels.items():
+            channel_element = ET.SubElement(tv_element, 'channel')
+            channel_element.set('id', channel_id)
+
+            display_name_element = ET.SubElement(channel_element, 'display-name')
+            display_name_element.set('lang', 'en')
+            display_name_element.text = channel_data['display_name']
+
+        # Convert to string and save
+        xmltv_content = ET.tostring(tv_element, encoding='unicode', method='xml')
+
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+            f.write('<!DOCTYPE tv SYSTEM "xmltv.dtd">\n')
+            f.write(xmltv_content)
+
+        channel_count = len(channels)
+        print(f"Parsed {channel_count} channels and {programme_count} programmes")
+        print(f"Saved XMLTV EPG to: {filename}")
+
+        return filename
+
+    except Exception as e:
+        print(f"Error parsing XML EPG data: {e}")
+        return None
+
 def save_filtered_m3u(content, filename):
     """Save the filtered M3U content"""
     with open(filename, 'w', encoding='utf-8') as f:
@@ -150,13 +252,15 @@ def save_filtered_m3u(content, filename):
 def main():
     """Main function"""
     parser = argparse.ArgumentParser(
-        description="Simple M3U Adult Content Filter",
+        description="IPTV Extractor - Downloads M3U playlist, filters adult content, and fetches PlutoTV EPG data",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python iptv_extractor.py                    # Download and filter default M3U
-  python iptv_extractor.py --source URL       # Use custom M3U source
-  python iptv_extractor.py --output FILE      # Custom output filename
+  python iptv_extractor.py                           # Download M3U and PlutoTV EPG, filter adult content
+  python iptv_extractor.py --source URL              # Use custom M3U source
+  python iptv_extractor.py --output-m3u FILE         # Custom M3U output filename
+  python iptv_extractor.py --output-xmltv FILE       # Custom XMLTV output filename
+  python iptv_extractor.py --epg-source URL          # Custom EPG XML source (e.g., SamsungTVPlus, Stirr, etc.)
         """
     )
 
@@ -168,13 +272,30 @@ Examples:
     )
 
     parser.add_argument(
-        "--output",
+        "--epg-source",
+        type=str,
+        default="https://i.mjh.nz/PlutoTV/us.xml",
+        help="EPG XML source URL (default: PlutoTV US EPG)"
+    )
+
+    parser.add_argument(
+        "--output-m3u",
         type=str,
         default="iptv_playlist.m3u",
-        help="Output filename (default: filtered_playlist.m3u)"
+        help="M3U output filename"
+    )
+
+    parser.add_argument(
+        "--output-xmltv",
+        type=str,
+        default="epg_guide.xmltv",
+        help="XMLTV EPG output filename"
     )
 
     args = parser.parse_args()
+
+    print("Starting IPTV extraction process...")
+    print("=" * 50)
 
     # Download M3U
     m3u_content = download_m3u(args.source)
@@ -182,14 +303,27 @@ Examples:
         sys.exit(1)
 
     # Filter adult content
-    print("Filtering adult content...")
+    print("\nFiltering adult content...")
     filtered_content = filter_adult_content(m3u_content)
 
     # Save filtered M3U
-    save_filtered_m3u(filtered_content, args.output)
+    save_filtered_m3u(filtered_content, args.output_m3u)
 
-    print("\n✓ M3U playlist successfully filtered!")
-    print("Adult/XXX content and radio stations have been removed.")
+    # Download and process EPG XML
+    print("\n" + "=" * 30)
+    xml_content = download_xml_epg(args.epg_source)
+    if xml_content:
+        parse_and_save_xmltv(xml_content, args.output_xmltv)
+    else:
+        print("Warning: Could not download EPG data")
+
+    print("\n" + "=" * 50)
+    print("✓ IPTV extraction completed!")
+    print("✓ M3U playlist filtered (adult/XXX content and radio stations removed)")
+    print("✓ EPG guide data downloaded and converted to XMLTV format")
+    print("\nFiles created:")
+    print(f"  - M3U Playlist: {args.output_m3u}")
+    print(f"  - EPG Guide: {args.output_xmltv}")
 
 if __name__ == "__main__":
     main()

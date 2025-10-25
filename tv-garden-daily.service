@@ -8,7 +8,7 @@ Type=oneshot
 User=root
 Group=root
 WorkingDirectory=/home/loganlatham/JellyGarden
-ExecStart=/usr/bin/python3 /home/loganlatham/JellyGarden/iptv_extractor.py --output /var/lib/tv-garden/iptv_playlist.m3u
+ExecStart=/usr/bin/python3 /home/loganlatham/JellyGarden/iptv_extractor.py --output-m3u /var/lib/tv-garden/iptv_playlist.m3u --output-xmltv /var/lib/tv-garden/epg_guide.xmltv
 StandardOutput=journal
 StandardError=journal
 

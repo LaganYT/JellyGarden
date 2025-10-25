@@ -86,25 +86,36 @@ def show_setup_instructions():
       - M3U URL: file:///var/lib/tv-garden/iptv_playlist.m3u
       - Save
 
-   B. Map Channels:
+   B. Add XMLTV Guide Provider:
+      - Go to Dashboard → Live TV → Guide Data Providers
+      - Click "Add" → Select "XMLTV"
+      - Name: "PlutoTV EPG Guide"
+      - XMLTV URL: file:///var/lib/tv-garden/epg_guide.xmltv
+      - Save
+
+   C. Map Channels:
       - Go to Dashboard → Live TV → Channels
       - The channels should be automatically detected from the M3U
+      - Map channels to their corresponding guide data from the EPG
       - Review and adjust channel mappings as needed
 
 5. FEATURES:
    - 11,000+ IPTV channels from BuddyChewChew's playlist
+   - Real-time EPG data from PlutoTV with program schedules
    - Automatic filtering of adult/XXX content
    - Radio station removal for TV-focused experience
    - Real IPTV stream URLs from multiple providers
    - Daily automated updates via systemd
-   - Clean, family-friendly channel lineup
+   - Clean, family-friendly channel lineup with TV guide
 
 6. NOTES:
    - Adult content and radio stations are automatically filtered out
+   - EPG data is fetched from PlutoTV for program schedules
    - Stream URLs are provided by various IPTV services
+   - Other EPG sources available: SamsungTVPlus, Stirr, Plex, etc. from i.mjh.nz
    - Daily service logs to /var/log/tv-garden/daily_extraction.log
    - Files stored in /var/lib/tv-garden/
-   - Service updates the playlist daily at a random time
+   - Service updates both playlist and EPG data daily at a random time
 """)
 
 def install_service():

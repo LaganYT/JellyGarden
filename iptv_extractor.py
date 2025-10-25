@@ -71,6 +71,11 @@ def filter_adult_content(m3u_content):
             # Reset skip flag for new channel
             skip_channel = False
 
+            # Check for radio stations (skip them)
+            if 'radio="true"' in line_lower or ' radio ' in line_lower:
+                skip_channel = True
+                continue
+
             # Check TVG-ID attribute
             if any(adult_id in line_lower for adult_id in adult_channel_ids):
                 skip_channel = True
@@ -125,9 +130,13 @@ def filter_adult_content(m3u_content):
     filtered_count = filtered_content.count('#EXTINF:')
     removed_count = original_count - filtered_count
 
+    # Count radio stations in original content
+    radio_count = m3u_content.lower().count('radio="true"')
+
     print(f"Original channels: {original_count}")
+    print(f"Radio stations found: {radio_count}")
     print(f"Filtered channels: {filtered_count}")
-    print(f"Adult channels removed: {removed_count}")
+    print(f"Adult/radio channels removed: {removed_count}")
 
     return filtered_content
 
@@ -180,7 +189,7 @@ Examples:
     save_filtered_m3u(filtered_content, args.output)
 
     print("\n✓ M3U playlist successfully filtered!")
-    print("Adult/XXX content has been removed.")
+    print("Adult/XXX content and radio stations have been removed.")
 
 if __name__ == "__main__":
     main()

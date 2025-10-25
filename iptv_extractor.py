@@ -25,35 +25,109 @@ def filter_adult_content(m3u_content):
     filtered_lines = []
     skip_channel = False
 
-    for line in lines:
-        line_lower = line.lower()
+    # Comprehensive list of adult content keywords and patterns
+    adult_keywords = [
+        'xxx', 'porn', 'sex', 'adult', 'erotic', 'nude', 'naked',
+        'hentai', 'milf', 'teen', 'amateur', 'fetish', 'bdsm',
+        'lesbian', 'gay', 'bisexual', 'trans', 'shemale', 'ladyboy',
+        'escort', 'prostitute', 'strip', 'cam', 'webcam', 'onlyfans',
+        'manyvids', 'realitykings', 'bangbros', 'naughtyamerica',
+        'blacked', 'tushy', 'vixen', 'brazzers', 'evilangel'
+    ]
 
-        # Check for adult content markers
-        if ('#extgrp:daddylive xxx' in line_lower or
-            'tvg-id="adult.section.dummy.us"' in line_lower or
-            ('18+' in line and '#extinf:' in line_lower) or
-            ('porn' in line and '#extinf:' in line_lower) or
-            ('sex' in line and '#extinf:' in line_lower)):
-            # Skip this channel (next 2 lines: EXTINF and URL)
-            skip_channel = True
+    # Group patterns that indicate adult content
+    adult_groups = [
+        'xxx', 'porn', 'adult', 'erotic', 'sex', 'nude',
+        'daddylive xxx', 'drewlive xxx'
+    ]
+
+    # Channel ID patterns for adult content
+    adult_channel_ids = [
+        'adult.section.dummy',
+        'xxx.',
+        'porn.',
+        'sex.',
+        'adult.',
+        'erotic.'
+    ]
+
+    for line in lines:
+        line_lower = line.lower().strip()
+
+        # Skip empty lines
+        if not line_lower:
+            filtered_lines.append(line)
             continue
+
+        # Check for adult group markers
+        if line_lower.startswith('#extgrp:'):
+            group_name = line_lower[8:].strip()
+            if any(adult_term in group_name for adult_term in adult_groups):
+                skip_channel = True
+                continue
+
+        # Check for adult channel IDs in EXTINF lines
+        elif line_lower.startswith('#extinf:'):
+            # Reset skip flag for new channel
+            skip_channel = False
+
+            # Check TVG-ID attribute
+            if any(adult_id in line_lower for adult_id in adult_channel_ids):
+                skip_channel = True
+                continue
+
+            # Check for adult keywords in channel name (after comma)
+            if ',' in line:
+                channel_name = line.split(',', 1)[1].lower().strip()
+
+                # Skip legitimate channels that happen to contain "adult"
+                legitimate_exceptions = [
+                    'adult swim',  # Cartoon Network
+                    'black jesus',  # TV show
+                ]
+
+                # Check if it's a legitimate exception
+                is_legitimate = any(exception in channel_name for exception in legitimate_exceptions)
+
+                if not is_legitimate:
+                    # Check for adult keywords, but be more specific
+                    if any(keyword in channel_name for keyword in adult_keywords):
+                        # Additional check: avoid false positives with movie/TV show names
+                        # Only flag if it seems like explicit adult content
+                        adult_indicators = ['xxx', 'porn', 'sex', 'nude', 'naked', 'erotic', 'amateur']
+                        if any(indicator in channel_name for indicator in adult_indicators):
+                            skip_channel = True
+                            continue
+
+                    # Check for 18+ markers
+                    if '18+' in channel_name or '+18' in channel_name:
+                        skip_channel = True
+                        continue
+
+                    # Check for explicit content markers
+                    explicit_markers = ['only fans', 'onlyfans', 'manyvids', 'cam', 'webcam']
+                    if any(marker in channel_name for marker in explicit_markers):
+                        skip_channel = True
+                        continue
 
         # If we're skipping a channel, skip the URL line too
-        if skip_channel and not line.startswith('#'):
-            skip_channel = False
+        elif skip_channel and not line.startswith('#'):
             continue
 
-        # Reset skip flag for next channel
-        if line.startswith('#extinf:'):
-            skip_channel = False
-
-        filtered_lines.append(line)
+        # Add line if not skipping
+        if not skip_channel:
+            filtered_lines.append(line)
 
     filtered_content = '\n'.join(filtered_lines)
 
-    # Count channels
-    channel_count = filtered_content.count('#EXTINF:')
-    print(f"Filtered to {channel_count} clean channels")
+    # Count channels before and after filtering
+    original_count = m3u_content.count('#EXTINF:')
+    filtered_count = filtered_content.count('#EXTINF:')
+    removed_count = original_count - filtered_count
+
+    print(f"Original channels: {original_count}")
+    print(f"Filtered channels: {filtered_count}")
+    print(f"Adult channels removed: {removed_count}")
 
     return filtered_content
 
@@ -87,7 +161,7 @@ Examples:
     parser.add_argument(
         "--output",
         type=str,
-        default="filtered_playlist.m3u",
+        default="iptv_playlist.m3u",
         help="Output filename (default: filtered_playlist.m3u)"
     )
 

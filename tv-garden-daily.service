@@ -7,8 +7,8 @@ Wants=network.target
 Type=oneshot
 User=root
 Group=root
-WorkingDirectory=/opt/tv-garden
-ExecStart=/opt/tv-garden/daily_tv_garden.sh extract
+WorkingDirectory=/home/loganlatham/JellyGarden
+ExecStart=/home/loganlatham/JellyGarden/daily_tv_garden.sh run
 StandardOutput=journal
 StandardError=journal
 
@@ -17,4 +17,5 @@ NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
 ProtectHome=true
-ReadWritePaths=/var/log/tv-garden /var/www/tv-garden /run /tmp
+ReadWritePaths=/var/log/tv-garden /var/lib/tv-garden /home/loganlatham/JellyGarden
+RestrictNamespaces=true

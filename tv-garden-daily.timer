@@ -1,5 +1,5 @@
 [Unit]
-Description=Run TV Garden extraction daily
+Description=Run IPTV playlist update daily
 Requires=tv-garden-daily.service
 
 [Timer]

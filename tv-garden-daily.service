@@ -1,5 +1,5 @@
 [Unit]
-Description=TV Garden Daily Channel Extraction
+Description=IPTV Playlist Daily Update
 After=network.target
 Wants=network.target
 
@@ -8,7 +8,7 @@ Type=oneshot
 User=root
 Group=root
 WorkingDirectory=/home/loganlatham/JellyGarden
-ExecStart=/home/loganlatham/JellyGarden/daily_tv_garden.sh run
+ExecStart=/usr/bin/python3 /home/loganlatham/JellyGarden/iptv_extractor.py --output /var/lib/tv-garden/iptv_playlist.m3u
 StandardOutput=journal
 StandardError=journal
 

@@ -46,17 +46,13 @@ def install_dependencies(missing_deps):
         print("✗ Failed to install dependencies")
         return False
 
-def run_extractor(tmdb_enabled=False, api_key=None):
-    """Run the enhanced channel extractor"""
+def run_extractor():
+    """Run the IPTV extractor"""
     print("\n" + "="*50)
-    print("Running TV Garden channel extractor...")
+    print("Running IPTV playlist extractor...")
     print("="*50)
 
-    cmd = [sys.executable, "enhanced_extractor.py"]
-    if tmdb_enabled:
-        cmd.append("--tmdb")
-        if api_key:
-            cmd.extend(["--api-key", api_key])
+    cmd = [sys.executable, "iptv_extractor.py", "--output", "iptv_playlist.m3u"]
 
     try:
         subprocess.check_call(cmd)
@@ -72,11 +68,11 @@ def show_setup_instructions():
     print("JELLYFIN SETUP INSTRUCTIONS")
     print("="*60)
     print("""
-1. BASIC USAGE (with M3U):
-   python enhanced_extractor.py
+1. BASIC USAGE:
+   python iptv_extractor.py
 
-2. XMLTV ONLY:
-   python enhanced_extractor.py --no-m3u
+2. CUSTOM SOURCE:
+   python iptv_extractor.py --source "https://your-m3u-url"
 
 3. DAILY AUTOMATION (Recommended):
    python setup_jellyfin.py --install-service
@@ -86,40 +82,34 @@ def show_setup_instructions():
    A. Add M3U Tuner:
       - Go to Dashboard → Live TV → Tuners
       - Click "Add" → Select "M3U Tuner"
-      - Name: "TV Garden Channels"
-      - M3U URL: file:///var/lib/tv-garden/tv_garden_channels.m3u
+      - Name: "IPTV Channels"
+      - M3U URL: file:///var/lib/tv-garden/iptv_playlist.m3u
       - Save
 
-   B. Add XMLTV Guide Provider:
-      - Go to Dashboard → Live TV → Guide Data Providers
-      - Click "Add" → Select "XMLTV"
-      - Name: "TV Garden Guide"
-      - XMLTV URL: file:///var/lib/tv-garden/tv_garden_channels.xmltv
-      - Save
-
-   C. Map Channels to Guide:
+   B. Map Channels:
       - Go to Dashboard → Live TV → Channels
-      - Map each channel to its corresponding guide data
-      - Save mappings
+      - The channels should be automatically detected from the M3U
+      - Review and adjust channel mappings as needed
 
 5. FEATURES:
-   - 1,000+ US channels from EPGShare01
-   - Real programme schedules with detailed metadata
-   - M3U playlist templates for easy stream URL addition
-   - Automatic channel numbering
+   - 11,000+ IPTV channels from BuddyChewChew's playlist
+   - Automatic filtering of adult/XXX content
+   - Radio station removal for TV-focused experience
+   - Real IPTV stream URLs from multiple providers
    - Daily automated updates via systemd
-   - Channel icons and rich programme information
+   - Clean, family-friendly channel lineup
 
 6. NOTES:
-   - EPGShare01 provides programme data only (no stream URLs)
-   - Add your own IPTV stream URLs to the generated M3U file
+   - Adult content and radio stations are automatically filtered out
+   - Stream URLs are provided by various IPTV services
    - Daily service logs to /var/log/tv-garden/daily_extraction.log
    - Files stored in /var/lib/tv-garden/
+   - Service updates the playlist daily at a random time
 """)
 
 def install_service():
-    """Install systemd service for daily EPGShare01 extraction"""
-    print("Installing systemd service for daily EPGShare01 extraction...")
+    """Install systemd service for daily IPTV playlist update"""
+    print("Installing systemd service for daily IPTV playlist update...")
 
     try:
         import subprocess
@@ -222,17 +212,15 @@ def uninstall_service():
 
 def main():
     """Main setup function"""
-    parser = argparse.ArgumentParser(description="TV Garden Channel Setup Helper")
+    parser = argparse.ArgumentParser(description="IPTV Playlist Setup Helper")
     parser.add_argument("--install-deps", action="store_true", help="Install missing dependencies")
-    parser.add_argument("--extract", action="store_true", help="Run channel extraction")
-    parser.add_argument("--tmdb", action="store_true", help="Enable TMDB integration")
-    parser.add_argument("--api-key", type=str, help="TMDB API key")
-    parser.add_argument("--install-service", action="store_true", help="Install systemd service for daily execution")
+    parser.add_argument("--extract", action="store_true", help="Run IPTV playlist extraction")
+    parser.add_argument("--install-service", action="store_true", help="Install systemd service for daily playlist updates")
     parser.add_argument("--uninstall-service", action="store_true", help="Remove systemd service")
 
     args = parser.parse_args()
 
-    print("TV Garden Channel Extractor Setup for Jellyfin")
+    print("IPTV Playlist Extractor Setup for Jellyfin")
     print("=" * 50)
 
     # Check dependencies
@@ -267,8 +255,8 @@ def main():
 
     # Run extraction if requested
     if args.extract:
-        if not run_extractor(args.tmdb, args.api_key):
-            print("Failed to generate channel files")
+        if not run_extractor():
+            print("Failed to generate IPTV playlist")
             sys.exit(1)
 
     # Show setup instructions
@@ -277,7 +265,7 @@ def main():
     print("\n" + "="*60)
     print("SETUP COMPLETE!")
     print("="*60)
-    print("Run 'python enhanced_extractor.py' to generate channel files.")
+    print("Run 'python iptv_extractor.py' to generate IPTV playlist.")
     print("Follow the instructions above to configure Jellyfin.")
 
 if __name__ == "__main__":
